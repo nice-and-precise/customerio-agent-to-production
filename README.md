@@ -4,7 +4,7 @@ Taking a scrappy GTM agent CLI to production-grade: an eval on every run, a prom
 you can harden and **measure**, and a trace for everything.
 
 Built by Jordan Damhof for the Customer.io **GTM AI Engineer** role.
-Live dashboard: *(deploy URL)* · Code: this repo.
+Live dashboard: **https://customerio-agent-kit.vercel.app** · Code: this repo.
 
 > **What this is and isn't.** An illustrative prototype, not Customer.io data or
 > systems. The example agent is mine. The sample campaign outputs in `web/data.json`
