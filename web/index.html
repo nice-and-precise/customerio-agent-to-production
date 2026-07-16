@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agent-to-Production Kit — GTM lifecycle agent, hardened</title>
+<meta name="description" content="Taking a scrappy GTM agent CLI to production-grade: evals, prompt hardening, and observability. Built for the Customer.io GTM AI Engineer role by Jordan Damhof." />
+<style>
+  :root{
+    --bg:#f7f8fb; --card:#ffffff; --ink:#151a2d; --muted:#5b6478; --line:#e6e8ef;
+    --accent:#3b46cc; --pass:#0a7f3f; --passbg:#e7f4ec;
+    --fail:#b42318; --failbg:#fdecea; --warn:#8a6100; --warnbg:#fdf3e2; --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  a{color:#3b46cc}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
+  header{background:linear-gradient(180deg,#12162b,#1c2340);color:#fff;padding:34px 0 30px}
+  header .wrap{display:block}
+  .eyebrow{font:600 12px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#9aa6d6}
+  h1{margin:.35em 0 .15em;font-size:30px;letter-spacing:-.01em}
+  header p.sub{margin:.2em 0 0;color:#c7cde6;font-size:16px;max-width:60ch}
+  .who{margin-top:16px;font-size:14px;color:#aab2d8}
+  .who a{color:#c9d0f2;text-decoration:none;border-bottom:1px solid #4a5385}
+  .banner{background:var(--warnbg);color:#6a4a00;border-top:1px solid #f0e2c0;border-bottom:1px solid #f0e2c0;font-size:13.5px;padding:10px 0}
+  section{padding:30px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:19px;margin:0 0 4px;letter-spacing:-.01em}
+  h2 .n{color:var(--muted);font:600 13px/1 var(--mono)}
+  .lede{color:var(--muted);margin:0 0 18px;max-width:74ch}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .metric .v{font:700 24px/1.1 var(--mono);letter-spacing:-.02em}
+  .metric .k{color:var(--muted);font-size:12.5px;margin-top:3px}
+  .lift{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .lift .big{font:800 40px/1 var(--mono);letter-spacing:-.03em}
+  .lift .arrow{color:var(--muted);font-size:26px}
+  .lift .delta{color:var(--pass);font-weight:700}
+  .lift .cap{color:var(--muted);font-size:13.5px;max-width:34ch}
+  .v1{color:var(--fail)} .v2{color:var(--pass)}
+  .case{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:16px}
+  .case h3{margin:0 0 6px;font-size:16px}
+  .brief{color:var(--muted);font-size:13.5px;margin:0 0 4px}
+  .seg{font:12.5px/1.5 var(--mono);color:#41496a;background:#f2f4fa;border:1px solid var(--line);border-radius:8px;padding:7px 9px;margin:8px 0 14px;overflow-x:auto}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:720px){.cols{grid-template-columns:1fr}}
+  .col{border:1px solid var(--line);border-radius:10px;padding:12px 13px}
+  .col.win{border-color:#bfe3cd;background:#fbfefc}
+  .col h4{margin:0;font:600 13px/1 var(--mono);display:flex;justify-content:space-between;align-items:center}
+  .score{font:700 15px var(--mono)}
+  .score.p{color:var(--pass)} .score.f{color:var(--fail)} .score.w{color:var(--warn)}
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 4px}
+  .chip{font:600 11px/1 var(--mono);padding:4px 7px;border-radius:20px;border:1px solid}
+  .chip.ok{color:var(--pass);background:var(--passbg);border-color:#bfe3cd}
+  .chip.no{color:var(--fail);background:var(--failbg);border-color:#f3c6c0}
+  details{margin-top:10px}
+  summary{cursor:pointer;font-size:12.5px;color:#3b46cc}
+  .msgs{margin:8px 0 0;padding:0;list-style:none;font-size:12.5px}
+  .msgs li{border-top:1px dashed var(--line);padding:7px 0}
+  .msgs .meta{font:600 11px var(--mono);color:var(--muted)}
+  .msgs .sub{font-weight:600}
+  .pill{display:inline-block;font:600 10px/1 var(--mono);padding:3px 6px;border-radius:5px;background:#eef0f7;color:#41496a;margin-right:5px}
+  table.runs{width:100%;border-collapse:collapse;font:12.5px/1.4 var(--mono);margin-top:6px}
+  table.runs th,table.runs td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  table.runs th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  .st{font-weight:700} .st.pass{color:var(--pass)} .st.warn{color:var(--warn)} .st.fail{color:var(--fail)}
+  .how{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .step .t{font:600 13px var(--mono);color:#3b46cc}
+  .step p{margin:6px 0 0;color:var(--muted);font-size:13px}
+  footer{padding:26px 0 50px;color:var(--muted);font-size:13px}
+  code{font:12.5px var(--mono);background:#eef0f7;padding:1px 5px;border-radius:5px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Agent-to-Production Kit</div>
+    <h1>A scrappy GTM agent, taken to production-grade</h1>
+    <p class="sub">A lifecycle-campaign agent wrapped in the layer that makes a fleet dependable: an eval on every run, a prompt you can harden and <em>measure</em>, and a trace for everything.</p>
+    <div class="who">Built by <strong>Jordan Damhof</strong> for the Customer.io GTM AI Engineer role ·
+      <a id="repo" href="#">GitHub repo</a> ·
+      <a href="https://github.com/nice-and-precise">github.com/nice-and-precise</a></div>
+  </div>
+</header>
+<div class="banner"><div class="wrap">Illustrative prototype, not Customer.io data or systems. The sample runs are fixtures; the parser, eval rubric, and traces you see below are computed by the real, runnable code in the repo.</div></div>
+
+<section id="lift-sec"><div class="wrap">
+  <h2>The point: hardening a prompt should move a number <span class="n"></span></h2>
+  <p class="lede">Same agent, same three cases, two prompt versions. The eval suite scores every run, so "I improved the prompt" becomes a measured lift instead of a vibe.</p>
+  <div class="lift" id="lift"></div>
+</div></section>
+
+<section id="fleet-sec"><div class="wrap">
+  <h2>Fleet health <span class="n">observability/</span></h2>
+  <p class="lede">Every run appends one JSON line with timing, tokens, and its eval score. This is the rollup you'd put behind an alert, plus the raw run log.</p>
+  <div class="cards" id="fleet"></div>
+  <table class="runs" id="runlog"><thead><tr>
+    <th>run</th><th>case</th><th>prompt</th><th>score</th><th>checks</th><th>latency</th><th>out tok</th><th>status</th>
+  </tr></thead><tbody></tbody></table>
+</div></section>
+
+<section id="cases-sec"><div class="wrap">
+  <h2>The runs, scored <span class="n">evals/rubric.mjs</span></h2>
+  <p class="lede">Each case, scrappy prompt on the left, hardened prompt on the right. Red chips are the checks the rubric caught, a PII leak, backwards timing, no exit criteria, over-messaging.</p>
+  <div id="cases"></div>
+</div></section>
+
+<section id="how-sec"><div class="wrap">
+  <h2>How a run flows</h2>
+  <p class="lede">The same four steps the CLI, CI, and this page all share. It maps to the job: alpha-to-production ownership, evals, and observability across the fleet.</p>
+  <div class="how">
+    <div class="step"><div class="t">1 · agent</div><p>Provider-agnostic call (Claude first, any OpenAI-compatible endpoint second). Prompt is versioned in <code>agent/prompts/</code>.</p></div>
+    <div class="step"><div class="t">2 · parse</div><p>Pulls the first balanced JSON object out of real model messiness, code fences, prose, half-formatted output.</p></div>
+    <div class="step"><div class="t">3 · eval</div><p>Ten weighted, deterministic checks. Same scoring in the CLI, in CI, and here. A schema break or PII leak is weighted heavier than length.</p></div>
+    <div class="step"><div class="t">4 · trace</div><p>One JSONL line per run: latency, tokens, eval score, status. Greppable today, streams to Cloud Logging / BigQuery when the fleet grows.</p></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  Jordan Damhof · 320-212-2042 · jordandamhof@gmail.com · west-central Minnesota ·
+  <span id="gen"></span>
+</div></footer>
+
+<script>
+// hook-safe hyperscript: no innerHTML anywhere. text goes in via textContent.
+function h(tag, attrs, ...kids){
+  const e=document.createElement(tag);
+  if(attrs) for(const k in attrs){
+    if(k==="class") e.className=attrs[k];
+    else if(k==="href"||k==="id"||k==="colspan") e.setAttribute(k,attrs[k]);
+    else e[k]=attrs[k];
+  }
+  for(const kid of kids.flat()){ if(kid==null||kid===false) continue;
+    e.appendChild(typeof kid==="string"||typeof kid==="number"?document.createTextNode(String(kid)):kid); }
+  return e;
+}
+const pct=n=>Math.round(n*100)+"%";
+const cls=s=>s==="pass"?"p":s==="warn"?"w":"f";
+const REPO="https://github.com/nice-and-precise/customerio-agent-to-production";
+
+fetch("./data.json").then(r=>r.json()).then(data=>{
+  document.getElementById("repo").setAttribute("href",REPO);
+  document.getElementById("gen").textContent="sample runs · "+(data.model||"");
+
+  const v1=data.fleet.score_by_version&&data.fleet.score_by_version.v1;
+  const v2=data.fleet.score_by_version&&data.fleet.score_by_version.v2_hardened;
+
+  // lift
+  const lift=document.getElementById("lift");
+  lift.appendChild(h("div",null,h("div",{class:"big v1"},pct(v1)),h("div",{class:"cap"},"v1 — scrappy prompt")));
+  lift.appendChild(h("div",{class:"arrow"},"→"));
+  lift.appendChild(h("div",null,h("div",{class:"big v2"},pct(v2)),h("div",{class:"cap"},"v2 — hardened prompt")));
+  lift.appendChild(h("div",{class:"delta big"},"+"+Math.round((v2-v1)*100)+" pts"));
+  lift.appendChild(h("div",{class:"cap"},"The hardened prompt enforces schema, monotonic timing, behavioral triggers, exit criteria, guardrails, and a no-PII rule. The rubric confirms it."));
+
+  // fleet cards
+  const f=data.fleet, fl=document.getElementById("fleet");
+  const card=(v,k)=>h("div",{class:"metric"},h("div",{class:"v"},v),h("div",{class:"k"},k));
+  fl.append(
+    card(f.runs,"runs traced"),
+    card(pct(f.pass_rate),"pass rate (score ≥ 80%)"),
+    card(pct(f.mean_score),"mean eval score"),
+    card(f.p50_latency_ms+"ms","p50 latency"),
+    card(f.p95_latency_ms+"ms","p95 latency"),
+    card(f.total_output_tokens.toLocaleString(),"output tokens")
+  );
+
+  // run log
+  const tb=document.querySelector("#runlog tbody");
+  for(const r of data.runs){const t=r.trace;
+    tb.appendChild(h("tr",null,
+      h("td",null,t.run_id),h("td",null,r.case),h("td",null,r.prompt_version),
+      h("td",null,pct(t.eval_score)),h("td",null,t.evals_passed+"/"+t.evals_total),
+      h("td",null,t.latency_ms+"ms"),h("td",null,String(t.output_tokens)),
+      h("td",null,h("span",{class:"st "+t.status},t.status))));
+  }
+
+  // cases
+  const wrap=document.getElementById("cases");
+  for(const c of data.cases){
+    const runs=data.runs.filter(r=>r.case===c.id);
+    const col=(r)=>{
+      const win=r.prompt_version==="v2_hardened";
+      const s=r.evaluation, st=r.trace.status;
+      const head=h("h4",null,
+        h("span",null,win?"v2 · hardened":"v1 · scrappy"),
+        h("span",{class:"score "+cls(st)},pct(s.score)+" · "+s.passed+"/"+s.total));
+      const chips=h("div",{class:"chips"});
+      for(const ck of s.checks){chips.appendChild(h("span",{class:"chip "+(ck.ok?"ok":"no"),title:ck.detail},(ck.ok?"✓ ":"✗ ")+ck.id));}
+      const kids=[head,chips];
+      if(r.campaign){
+        const ul=h("ul",{class:"msgs"});
+        for(const m of (r.campaign.messages||[])){
+          ul.appendChild(h("li",null,
+            h("div",{class:"meta"},"step "+m.step+" · "+m.channel+" · +"+m.delay_hours+"h · "+(m.trigger&&m.trigger.type)),
+            m.subject?h("div",{class:"sub"},m.subject):null,
+            h("div",null,m.body_outline||""),
+            h("div",null,h("span",{class:"pill"},"CTA"),m.primary_cta||"")));
+        }
+        const det=h("details",null,h("summary",null, (r.campaign.messages||[]).length+" messages · exit: "+(r.campaign.exit_criteria?"set":"—")),ul);
+        kids.push(det);
+      } else {
+        kids.push(h("div",{class:"chip no"},"did not parse: "+(r.parse_error||"")));
+      }
+      return h("div",{class:"col"+(win?" win":"")},...kids);
+    };
+    const v1r=runs.find(r=>r.prompt_version==="v1"), v2r=runs.find(r=>r.prompt_version==="v2_hardened");
+    wrap.appendChild(h("div",{class:"case"},
+      h("h3",null,c.id.replace(/_/g," ")),
+      h("p",{class:"brief"},c.brief),
+      h("div",{class:"seg"},"segment: "+c.segment),
+      h("div",{class:"cols"}, v1r?col(v1r):"", v2r?col(v2r):"")));
+  }
+}).catch(e=>{document.getElementById("cases").appendChild(h("p",null,"Could not load data.json: "+e.message));});
+</script>
+</body>
+</html>

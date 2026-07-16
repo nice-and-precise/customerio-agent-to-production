@@ -1,0 +1,5 @@
+{
+  "id": "trial_no_activation",
+  "brief": "We launched a 14-day free trial of our workflow-automation product. Too many people sign up, poke around once, and never connect a data source, which is the moment value shows up. Drive trial users to connect their first data source and build one working automation before the trial ends.",
+  "segment": "Trial users who created an account in the last 14 days, logged in at least once, but have not fired the 'data_source_connected' event."
+}

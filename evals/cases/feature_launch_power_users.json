@@ -1,0 +1,5 @@
+{
+  "id": "feature_launch_power_users",
+  "brief": "We shipped a new AI-segments feature that builds audiences from real-time behavior instead of static lists. We want our most active customers to try it, publish one AI-built segment, and give feedback we can use in a case study.",
+  "segment": "Customers on a paid plan who fired 'segment_created' at least 5 times in the last 30 days and have logged in within the last 7 days."
+}

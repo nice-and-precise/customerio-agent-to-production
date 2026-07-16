@@ -1,0 +1,5 @@
+{
+  "id": "winback_dormant",
+  "brief": "A chunk of paid accounts have gone quiet. We want to win back accounts that were active but have stopped sending messages, without nagging people who are already looking at cancelling. Get one messaging workflow running again per account.",
+  "segment": "Paid accounts whose last 'campaign_sent' event was 30 to 90 days ago, excluding anyone who visited the cancellation page in the last 14 days."
+}

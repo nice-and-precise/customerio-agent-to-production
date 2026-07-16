@@ -1,0 +1,13 @@
+{
+  "name": "customerio-agent-to-production-kit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "An illustrative kit showing how I'd take a scrappy GTM agent CLI to production-grade: evals, prompt hardening, and observability. Built for the Customer.io GTM AI Engineer role.",
+  "scripts": {
+    "agent": "node agent/lifecycle_agent.mjs",
+    "evals": "node evals/run_evals.mjs",
+    "build-demo": "node scripts/build_demo_data.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

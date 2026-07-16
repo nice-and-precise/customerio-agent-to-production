@@ -1,0 +1,911 @@
+{
+  "generated_at": "2026-07-16T19:59:52.235Z",
+  "model": "fixture sample runs (scored live by the real rubric; regenerate with an API key via npm run build-demo)",
+  "note": "Sample runs. Campaign outputs are illustrative fixtures, but the parser, eval scores, and traces are computed by the real pipeline. No key ships to the browser.",
+  "cases": [
+    {
+      "id": "feature_launch_power_users",
+      "brief": "We shipped a new AI-segments feature that builds audiences from real-time behavior instead of static lists. We want our most active customers to try it, publish one AI-built segment, and give feedback we can use in a case study.",
+      "segment": "Customers on a paid plan who fired 'segment_created' at least 5 times in the last 30 days and have logged in within the last 7 days."
+    },
+    {
+      "id": "trial_no_activation",
+      "brief": "We launched a 14-day free trial of our workflow-automation product. Too many people sign up, poke around once, and never connect a data source, which is the moment value shows up. Drive trial users to connect their first data source and build one working automation before the trial ends.",
+      "segment": "Trial users who created an account in the last 14 days, logged in at least once, but have not fired the 'data_source_connected' event."
+    },
+    {
+      "id": "winback_dormant",
+      "brief": "A chunk of paid accounts have gone quiet. We want to win back accounts that were active but have stopped sending messages, without nagging people who are already looking at cancelling. Get one messaging workflow running again per account.",
+      "segment": "Paid accounts whose last 'campaign_sent' event was 30 to 90 days ago, excluding anyone who visited the cancellation page in the last 14 days."
+    }
+  ],
+  "runs": [
+    {
+      "case": "trial_no_activation",
+      "prompt_version": "v1",
+      "campaign": {
+        "campaign_name": "Trial Activation Nudge",
+        "messages": [
+          {
+            "step": 1,
+            "channel": "email",
+            "trigger": {
+              "type": "time_delay",
+              "value": "1 day after signup"
+            },
+            "delay_hours": 24,
+            "subject": "Connect your first data source",
+            "body_outline": "Show the value of connecting a source; link to the setup guide.",
+            "primary_cta": "Connect a data source"
+          },
+          {
+            "step": 2,
+            "channel": "email",
+            "trigger": {
+              "type": "time_delay",
+              "value": "day 4"
+            },
+            "delay_hours": 96,
+            "subject": "Build your first automation",
+            "body_outline": "Walk through building one automation end to end.",
+            "primary_cta": "Build an automation"
+          },
+          {
+            "step": 3,
+            "channel": "push",
+            "trigger": {
+              "type": "time_delay",
+              "value": "day 3"
+            },
+            "delay_hours": 72,
+            "subject": "",
+            "body_outline": "Reminder that the trial is ticking.",
+            "primary_cta": "Finish setup"
+          }
+        ],
+        "guardrails": [
+          "Only message during business hours"
+        ]
+      },
+      "parse_error": null,
+      "raw_excerpt": null,
+      "evaluation": {
+        "score": 0.5,
+        "passed": 5,
+        "total": 10,
+        "checks": [
+          {
+            "id": "schema_valid",
+            "ok": false,
+            "weight": 3,
+            "detail": "3 messages"
+          },
+          {
+            "id": "channels_valid",
+            "ok": true,
+            "weight": 2,
+            "detail": "all channels valid"
+          },
+          {
+            "id": "each_message_has_trigger",
+            "ok": true,
+            "weight": 2,
+            "detail": "all messages triggered"
+          },
+          {
+            "id": "each_message_has_cta",
+            "ok": true,
+            "weight": 2,
+            "detail": "all messages have a CTA"
+          },
+          {
+            "id": "timing_monotonic",
+            "ok": false,
+            "weight": 2,
+            "detail": "delay_hours goes backwards or is non-numeric"
+          },
+          {
+            "id": "segment_behavioral",
+            "ok": false,
+            "weight": 2,
+            "detail": "no behavioral filter"
+          },
+          {
+            "id": "no_pii_in_body",
+            "ok": true,
+            "weight": 3,
+            "detail": "no literal PII in bodies"
+          },
+          {
+            "id": "has_exit_criteria",
+            "ok": false,
+            "weight": 2,
+            "detail": "no exit criteria"
+          },
+          {
+            "id": "guardrails_present",
+            "ok": false,
+            "weight": 1,
+            "detail": "1 guardrails"
+          },
+          {
+            "id": "reasonable_length",
+            "ok": true,
+            "weight": 1,
+            "detail": "3 messages (want 3-6)"
+          }
+        ]
+      },
+      "trace": {
+        "run_id": "run_02d41e14",
+        "ts": "2026-07-16T19:59:52.233Z",
+        "agent": "lifecycle-campaign",
+        "case": "trial_no_activation",
+        "prompt_version": "v1",
+        "model": "fixture (regenerate live with an API key)",
+        "latency_ms": 1680,
+        "input_tokens": null,
+        "output_tokens": 421,
+        "tool_calls": 0,
+        "eval_score": 0.5,
+        "evals_passed": 5,
+        "evals_total": 10,
+        "status": "warn"
+      }
+    },
+    {
+      "case": "trial_no_activation",
+      "prompt_version": "v2_hardened",
+      "campaign": {
+        "campaign_name": "Trial: First Data Source to First Automation",
+        "objective": "Get 40% of non-activated trials to fire data_source_connected within 7 days.",
+        "target_segment": {
+          "name": "Trials not yet activated",
+          "behavioral_filter": "account_created within 14d AND login_count >= 1 AND NOT event:data_source_connected"
+        },
+        "messages": [
+          {
+            "step": 1,
+            "channel": "email",
+            "trigger": {
+              "type": "event",
+              "value": "trial_started"
+            },
+            "delay_hours": 1,
+            "subject": "The one step that makes the trial click",
+            "body_outline": "Frame connecting a data source as the moment value shows up; one-click link to the connect flow.",
+            "primary_cta": "Connect a data source",
+            "success_metric": "data_source_connected within 48h"
+          },
+          {
+            "step": 2,
+            "channel": "in_app",
+            "trigger": {
+              "type": "attribute",
+              "value": "still no data_source_connected at day 3"
+            },
+            "delay_hours": 72,
+            "subject": "",
+            "body_outline": "Contextual in-app tip pointing at the connect button when they next log in.",
+            "primary_cta": "Connect now",
+            "success_metric": "connect flow opened"
+          },
+          {
+            "step": 3,
+            "channel": "email",
+            "trigger": {
+              "type": "attribute",
+              "value": "data_source_connected true, automation_created false"
+            },
+            "delay_hours": 120,
+            "subject": "You are one automation away",
+            "body_outline": "Nudge from connected to first working automation with a 3-minute template.",
+            "primary_cta": "Build one automation",
+            "success_metric": "automation_created within trial"
+          }
+        ],
+        "exit_criteria": "Person fires automation_created, or the trial ends.",
+        "guardrails": [
+          "Max 1 message per 48h",
+          "Suppress anyone who opened a support ticket in last 24h",
+          "Respect quiet hours 9pm-8am local"
+        ]
+      },
+      "parse_error": null,
+      "raw_excerpt": null,
+      "evaluation": {
+        "score": 1,
+        "passed": 10,
+        "total": 10,
+        "checks": [
+          {
+            "id": "schema_valid",
+            "ok": true,
+            "weight": 3,
+            "detail": "3 messages"
+          },
+          {
+            "id": "channels_valid",
+            "ok": true,
+            "weight": 2,
+            "detail": "all channels valid"
+          },
+          {
+            "id": "each_message_has_trigger",
+            "ok": true,
+            "weight": 2,
+            "detail": "all messages triggered"
+          },
+          {
+            "id": "each_message_has_cta",
+            "ok": true,
+            "weight": 2,
+            "detail": "all messages have a CTA"
+          },
+          {
+            "id": "timing_monotonic",
+            "ok": true,
+            "weight": 2,
+            "detail": "delays non-decreasing"
+          },
+          {
+            "id": "segment_behavioral",
+            "ok": true,
+            "weight": 2,
+            "detail": "behavioral filter present"
+          },
+          {
+            "id": "no_pii_in_body",
+            "ok": true,
+            "weight": 3,
+            "detail": "no literal PII in bodies"
+          },
+          {
+            "id": "has_exit_criteria",
+            "ok": true,
+            "weight": 2,
+            "detail": "exit criteria set"
+          },
+          {
+            "id": "guardrails_present",
+            "ok": true,
+            "weight": 1,
+            "detail": "3 guardrails"
+          },
+          {
+            "id": "reasonable_length",
+            "ok": true,
+            "weight": 1,
+            "detail": "3 messages (want 3-6)"
+          }
+        ]
+      },
+      "trace": {
+        "run_id": "run_5913c516",
+        "ts": "2026-07-16T19:59:52.234Z",
+        "agent": "lifecycle-campaign",
+        "case": "trial_no_activation",
+        "prompt_version": "v2_hardened",
+        "model": "fixture (regenerate live with an API key)",
+        "latency_ms": 2410,
+        "input_tokens": null,
+        "output_tokens": 763,
+        "tool_calls": 0,
+        "eval_score": 1,
+        "evals_passed": 10,
+        "evals_total": 10,
+        "status": "pass"
+      }
+    },
+    {
+      "case": "feature_launch_power_users",
+      "prompt_version": "v1",
+      "campaign": {
+        "campaign_name": "AI Segments Launch",
+        "target_segment": {
+          "name": "Power users",
+          "behavioral_filter": "active paid customers"
+        },
+        "messages": [
+          {
+            "step": 1,
+            "channel": "email",
+            "trigger": {
+              "type": "event",
+              "value": "feature_flag_ai_segments_on"
+            },
+            "delay_hours": 0,
+            "subject": "Try AI Segments",
+            "body_outline": "Announce AI segments and ask them to try it. For early access questions email jordan.pm@ourco.com directly.",
+            "primary_cta": "Publish an AI segment"
+          },
+          {
+            "step": 2,
+            "channel": "email",
+            "trigger": {
+              "type": "time_delay",
+              "value": "3 days later"
+            },
+            "delay_hours": 72,
+            "subject": "How was AI Segments?",
+            "body_outline": "Ask for feedback for a case study.",
+            "primary_cta": "Share feedback"
+          }
+        ],
+        "guardrails": [
+          "Frequency cap 1/week"
+        ]
+      },
+      "parse_error": null,
+      "raw_excerpt": null,
+      "evaluation": {
+        "score": 0.65,
+        "passed": 6,
+        "total": 10,
+        "checks": [
+          {
+            "id": "schema_valid",
+            "ok": true,
+            "weight": 3,
+            "detail": "2 messages"
+          },
+          {
+            "id": "channels_valid",
+            "ok": true,
+            "weight": 2,
+            "detail": "all channels valid"
+          },
+          {
+            "id": "each_message_has_trigger",
+            "ok": true,
+            "weight": 2,
+            "detail": "all messages triggered"
+          },
+          {
+            "id": "each_message_has_cta",
+            "ok": true,
+            "weight": 2,
+            "detail": "all messages have a CTA"
+          },
+          {
+            "id": "timing_monotonic",
+            "ok": true,
+            "weight": 2,
+            "detail": "delays non-decreasing"
+          },
+          {
+            "id": "segment_behavioral",
+            "ok": true,
+            "weight": 2,
+            "detail": "behavioral filter present"
+          },
+          {
+            "id": "no_pii_in_body",
+            "ok": false,
+            "weight": 3,
+            "detail": "PII-like string in step 1"
+          },
+          {
+            "id": "has_exit_criteria",
+            "ok": false,
+            "weight": 2,
+            "detail": "no exit criteria"
+          },
+          {
+            "id": "guardrails_present",
+            "ok": false,
+            "weight": 1,
+            "detail": "1 guardrails"
+          },
+          {
+            "id": "reasonable_length",
+            "ok": false,
+            "weight": 1,
+            "detail": "2 messages (want 3-6)"
+          }
+        ]
+      },
+      "trace": {
+        "run_id": "run_65d4a291",
+        "ts": "2026-07-16T19:59:52.234Z",
+        "agent": "lifecycle-campaign",
+        "case": "feature_launch_power_users",
+        "prompt_version": "v1",
+        "model": "fixture (regenerate live with an API key)",
+        "latency_ms": 1520,
+        "input_tokens": null,
+        "output_tokens": 468,
+        "tool_calls": 0,
+        "eval_score": 0.65,
+        "evals_passed": 6,
+        "evals_total": 10,
+        "status": "warn"
+      }
+    },
+    {
+      "case": "feature_launch_power_users",
+      "prompt_version": "v2_hardened",
+      "campaign": {
+        "campaign_name": "AI Segments: Power-User Beta to Case Study",
+        "objective": "Get 25 power users to publish an AI-built segment and return usable feedback in 14 days.",
+        "target_segment": {
+          "name": "Recently active power users",
+          "behavioral_filter": "plan=paid AND count(segment_created,30d) >= 5 AND login within 7d"
+        },
+        "messages": [
+          {
+            "step": 1,
+            "channel": "email",
+            "trigger": {
+              "type": "event",
+              "value": "ai_segments_enabled_for_account"
+            },
+            "delay_hours": 2,
+            "subject": "You get AI Segments first",
+            "body_outline": "Position them as the group whose feedback shapes the feature; link straight into the AI-segment builder.",
+            "primary_cta": "Publish an AI segment",
+            "success_metric": "ai_segment_published within 5d"
+          },
+          {
+            "step": 2,
+            "channel": "in_app",
+            "trigger": {
+              "type": "attribute",
+              "value": "enabled but no ai_segment_published at day 4"
+            },
+            "delay_hours": 96,
+            "subject": "",
+            "body_outline": "In-app nudge with a one-line example of a behavior-based segment they could build.",
+            "primary_cta": "Try a template segment",
+            "success_metric": "builder opened"
+          },
+          {
+            "step": 3,
+            "channel": "email",
+            "trigger": {
+              "type": "event",
+              "value": "ai_segment_published"
+            },
+            "delay_hours": 144,
+            "subject": "Two minutes for a case study?",
+            "body_outline": "Thank them and ask for structured feedback via a short form, no personal contact details in the copy.",
+            "primary_cta": "Share feedback",
+            "success_metric": "feedback_form_submitted"
+          }
+        ],
+        "exit_criteria": "Person submits feedback, or 14 days elapse.",
+        "guardrails": [
+          "Frequency cap 1 message / 72h",
+          "Suppress accounts with an open escalation",
+          "Respect quiet hours"
+        ]
+      },
+      "parse_error": null,
+      "raw_excerpt": null,
+      "evaluation": {
+        "score": 1,
+        "passed": 10,
+        "total": 10,
+        "checks": [
+          {
+            "id": "schema_valid",
+            "ok": true,
+            "weight": 3,
+            "detail": "3 messages"
+          },
+          {
+            "id": "channels_valid",
+            "ok": true,
+            "weight": 2,
+            "detail": "all channels valid"
+          },
+          {
+            "id": "each_message_has_trigger",
+            "ok": true,
+            "weight": 2,
+            "detail": "all messages triggered"
+          },
+          {
+            "id": "each_message_has_cta",
+            "ok": true,
+            "weight": 2,
+            "detail": "all messages have a CTA"
+          },
+          {
+            "id": "timing_monotonic",
+            "ok": true,
+            "weight": 2,
+            "detail": "delays non-decreasing"
+          },
+          {
+            "id": "segment_behavioral",
+            "ok": true,
+            "weight": 2,
+            "detail": "behavioral filter present"
+          },
+          {
+            "id": "no_pii_in_body",
+            "ok": true,
+            "weight": 3,
+            "detail": "no literal PII in bodies"
+          },
+          {
+            "id": "has_exit_criteria",
+            "ok": true,
+            "weight": 2,
+            "detail": "exit criteria set"
+          },
+          {
+            "id": "guardrails_present",
+            "ok": true,
+            "weight": 1,
+            "detail": "3 guardrails"
+          },
+          {
+            "id": "reasonable_length",
+            "ok": true,
+            "weight": 1,
+            "detail": "3 messages (want 3-6)"
+          }
+        ]
+      },
+      "trace": {
+        "run_id": "run_149d58fc",
+        "ts": "2026-07-16T19:59:52.235Z",
+        "agent": "lifecycle-campaign",
+        "case": "feature_launch_power_users",
+        "prompt_version": "v2_hardened",
+        "model": "fixture (regenerate live with an API key)",
+        "latency_ms": 2280,
+        "input_tokens": null,
+        "output_tokens": 691,
+        "tool_calls": 0,
+        "eval_score": 1,
+        "evals_passed": 10,
+        "evals_total": 10,
+        "status": "pass"
+      }
+    },
+    {
+      "case": "winback_dormant",
+      "prompt_version": "v1",
+      "campaign": {
+        "campaign_name": "Winback",
+        "target_segment": {
+          "name": "Dormant paid",
+          "behavioral_filter": ""
+        },
+        "messages": [
+          {
+            "step": 1,
+            "channel": "email",
+            "trigger": {
+              "type": "time_delay",
+              "value": "day 0"
+            },
+            "delay_hours": 0,
+            "subject": "We miss you",
+            "body_outline": "Generic we-miss-you note.",
+            "primary_cta": "Come back"
+          },
+          {
+            "step": 2,
+            "channel": "email",
+            "trigger": {
+              "type": "time_delay",
+              "value": "day 2"
+            },
+            "delay_hours": 48,
+            "subject": "Still here",
+            "body_outline": "Second nudge.",
+            "primary_cta": "Log in"
+          },
+          {
+            "step": 3,
+            "channel": "email",
+            "trigger": {
+              "type": "time_delay",
+              "value": "day 4"
+            },
+            "delay_hours": 96,
+            "subject": "One more thing",
+            "body_outline": "Third nudge.",
+            "primary_cta": "Log in"
+          },
+          {
+            "step": 4,
+            "channel": "sms",
+            "trigger": {
+              "type": "time_delay",
+              "value": "day 5"
+            },
+            "delay_hours": 120,
+            "subject": "",
+            "body_outline": "SMS nudge.",
+            "primary_cta": "Log in"
+          },
+          {
+            "step": 5,
+            "channel": "email",
+            "trigger": {
+              "type": "time_delay",
+              "value": "day 7"
+            },
+            "delay_hours": 168,
+            "subject": "Discount",
+            "body_outline": "Offer a discount.",
+            "primary_cta": "Claim offer"
+          },
+          {
+            "step": 6,
+            "channel": "email",
+            "trigger": {
+              "type": "time_delay",
+              "value": "day 9"
+            },
+            "delay_hours": 216,
+            "subject": "Last call",
+            "body_outline": "Final nudge.",
+            "primary_cta": "Log in"
+          },
+          {
+            "step": 7,
+            "channel": "push",
+            "trigger": {
+              "type": "time_delay",
+              "value": "day 10"
+            },
+            "delay_hours": 240,
+            "subject": "",
+            "body_outline": "Push nudge.",
+            "primary_cta": "Open app"
+          }
+        ],
+        "guardrails": [
+          "None"
+        ]
+      },
+      "parse_error": null,
+      "raw_excerpt": null,
+      "evaluation": {
+        "score": 0.7,
+        "passed": 6,
+        "total": 10,
+        "checks": [
+          {
+            "id": "schema_valid",
+            "ok": true,
+            "weight": 3,
+            "detail": "7 messages"
+          },
+          {
+            "id": "channels_valid",
+            "ok": true,
+            "weight": 2,
+            "detail": "all channels valid"
+          },
+          {
+            "id": "each_message_has_trigger",
+            "ok": true,
+            "weight": 2,
+            "detail": "all messages triggered"
+          },
+          {
+            "id": "each_message_has_cta",
+            "ok": true,
+            "weight": 2,
+            "detail": "all messages have a CTA"
+          },
+          {
+            "id": "timing_monotonic",
+            "ok": true,
+            "weight": 2,
+            "detail": "delays non-decreasing"
+          },
+          {
+            "id": "segment_behavioral",
+            "ok": false,
+            "weight": 2,
+            "detail": "no behavioral filter"
+          },
+          {
+            "id": "no_pii_in_body",
+            "ok": true,
+            "weight": 3,
+            "detail": "no literal PII in bodies"
+          },
+          {
+            "id": "has_exit_criteria",
+            "ok": false,
+            "weight": 2,
+            "detail": "no exit criteria"
+          },
+          {
+            "id": "guardrails_present",
+            "ok": false,
+            "weight": 1,
+            "detail": "1 guardrails"
+          },
+          {
+            "id": "reasonable_length",
+            "ok": false,
+            "weight": 1,
+            "detail": "7 messages (want 3-6)"
+          }
+        ]
+      },
+      "trace": {
+        "run_id": "run_f0791ead",
+        "ts": "2026-07-16T19:59:52.235Z",
+        "agent": "lifecycle-campaign",
+        "case": "winback_dormant",
+        "prompt_version": "v1",
+        "model": "fixture (regenerate live with an API key)",
+        "latency_ms": 1975,
+        "input_tokens": null,
+        "output_tokens": 505,
+        "tool_calls": 0,
+        "eval_score": 0.7,
+        "evals_passed": 6,
+        "evals_total": 10,
+        "status": "warn"
+      }
+    },
+    {
+      "case": "winback_dormant",
+      "prompt_version": "v2_hardened",
+      "campaign": {
+        "campaign_name": "Reactivate Quiet Paid Accounts",
+        "objective": "Get one messaging workflow live again in 20% of dormant-but-not-churning accounts within 21 days.",
+        "target_segment": {
+          "name": "Dormant, not churning",
+          "behavioral_filter": "last campaign_sent 30-90d ago AND NOT pageview:cancellation within 14d"
+        },
+        "messages": [
+          {
+            "step": 1,
+            "channel": "email",
+            "trigger": {
+              "type": "attribute",
+              "value": "days_since_last_campaign_sent >= 30"
+            },
+            "delay_hours": 0,
+            "subject": "Your last workflow is still ready to run",
+            "body_outline": "Remind them of the specific workflow they paused and how close it is to live.",
+            "primary_cta": "Reactivate my workflow",
+            "success_metric": "workflow_activated within 7d"
+          },
+          {
+            "step": 2,
+            "channel": "in_app",
+            "trigger": {
+              "type": "attribute",
+              "value": "logged in but no workflow_activated"
+            },
+            "delay_hours": 96,
+            "subject": "",
+            "body_outline": "In-app path straight to the paused workflow with a one-click resume.",
+            "primary_cta": "Resume workflow",
+            "success_metric": "workflow editor opened"
+          },
+          {
+            "step": 3,
+            "channel": "email",
+            "trigger": {
+              "type": "attribute",
+              "value": "no reactivation by day 10"
+            },
+            "delay_hours": 240,
+            "subject": "Want a hand getting it running?",
+            "body_outline": "Offer a short setup call or a template, framed as help not discount-baiting.",
+            "primary_cta": "Get setup help",
+            "success_metric": "reply or call booked"
+          }
+        ],
+        "exit_criteria": "workflow_activated fires, or the account visits the cancellation page, or 21 days elapse.",
+        "guardrails": [
+          "Frequency cap 1 message / 96h",
+          "Hard-suppress anyone who hits the cancellation page mid-flight",
+          "Respect quiet hours and per-account send limits"
+        ]
+      },
+      "parse_error": null,
+      "raw_excerpt": null,
+      "evaluation": {
+        "score": 1,
+        "passed": 10,
+        "total": 10,
+        "checks": [
+          {
+            "id": "schema_valid",
+            "ok": true,
+            "weight": 3,
+            "detail": "3 messages"
+          },
+          {
+            "id": "channels_valid",
+            "ok": true,
+            "weight": 2,
+            "detail": "all channels valid"
+          },
+          {
+            "id": "each_message_has_trigger",
+            "ok": true,
+            "weight": 2,
+            "detail": "all messages triggered"
+          },
+          {
+            "id": "each_message_has_cta",
+            "ok": true,
+            "weight": 2,
+            "detail": "all messages have a CTA"
+          },
+          {
+            "id": "timing_monotonic",
+            "ok": true,
+            "weight": 2,
+            "detail": "delays non-decreasing"
+          },
+          {
+            "id": "segment_behavioral",
+            "ok": true,
+            "weight": 2,
+            "detail": "behavioral filter present"
+          },
+          {
+            "id": "no_pii_in_body",
+            "ok": true,
+            "weight": 3,
+            "detail": "no literal PII in bodies"
+          },
+          {
+            "id": "has_exit_criteria",
+            "ok": true,
+            "weight": 2,
+            "detail": "exit criteria set"
+          },
+          {
+            "id": "guardrails_present",
+            "ok": true,
+            "weight": 1,
+            "detail": "3 guardrails"
+          },
+          {
+            "id": "reasonable_length",
+            "ok": true,
+            "weight": 1,
+            "detail": "3 messages (want 3-6)"
+          }
+        ]
+      },
+      "trace": {
+        "run_id": "run_33a037e9",
+        "ts": "2026-07-16T19:59:52.235Z",
+        "agent": "lifecycle-campaign",
+        "case": "winback_dormant",
+        "prompt_version": "v2_hardened",
+        "model": "fixture (regenerate live with an API key)",
+        "latency_ms": 2630,
+        "input_tokens": null,
+        "output_tokens": 802,
+        "tool_calls": 0,
+        "eval_score": 1,
+        "evals_passed": 10,
+        "evals_total": 10,
+        "status": "pass"
+      }
+    }
+  ],
+  "fleet": {
+    "runs": 6,
+    "pass_rate": 0.5,
+    "mean_score": 0.8083333333333332,
+    "p50_latency_ms": 2280,
+    "p95_latency_ms": 2630,
+    "total_output_tokens": 3650,
+    "score_by_version": {
+      "v1": 0.6166666666666666,
+      "v2_hardened": 1
+    }
+  }
+}
